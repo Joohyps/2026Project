@@ -1,8 +1,7 @@
 """
 Battle Ball — 1v1  |  player.py
-플레이어 클래스 — 상태머신, 애니메이션, 공 소지 링
+플레이어 클래스 dmd— 상태머신, 애니메이션, 공 소지 링
 """
-
 import math
 import pygame
 from settings import (
