@@ -19,8 +19,8 @@ WALL_V = 22             # visual wall thickness (px)
 # ── Physics ──────────────────────────────────────────────────────────────────
 GRAVITY     = 920.0     # px / s²  (z-axis gravity)
 PLAYER_SPD  = 220.0     # px / s
-THROW_SPD   = 500.0     # px / s   (horizontal)
-THROW_VZ    = 310.0     # px / s   (initial upward velocity)
+THROW_SPD   = 1000.0     # px / s   (horizontal)
+THROW_VZ    = 210.0     # px / s   (initial upward velocity)
 BOUNCE_K    = 0.28      # velocity kept after first bounce
 ROLL_DAMP   = 3.5       # rolling friction coefficient
 
