@@ -2,7 +2,7 @@
 
 Battle Ball(Steam) 스타일의 피구 게임을 Python + pygame으로 구현.  
 영상에서 확인된 메커니즘을 그대로 재현.
-
+니얼굴
 ---
 
 ## 실행 방법
