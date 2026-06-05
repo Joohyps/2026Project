@@ -1,130 +1,120 @@
 """
 Battle Ball — 1v1  |  court.py
-코트 렌더러 — 잔디, 나무 울타리, 배경 (정적 사전 렌더링)
+원근 투영 코트 렌더러
 """
 
 import random
 import pygame
 from settings import (
     WIDTH, HEIGHT,
-    CX1, CX2, CY1, CY2, CW, CH, WALL_V,
+    CX1, CX2, CY1, CY2, CW, CH, MID_X, FENCE_D,
     C_BG, C_GRASS, C_GRASS2,
     C_FENCE, C_FENCE_F, C_FENCE_T,
+    w2s,
 )
 
 
 class Court:
-    """
-    __init__()에서 정적 배경을 한 번만 렌더링하고 Surface에 저장.
-    draw()는 해당 Surface를 blit하기만 함 → 매 프레임 비용 최소화.
-    """
-
     def __init__(self):
         self._surf = pygame.Surface((WIDTH, HEIGHT))
         self._build()
 
-    # ── Pre-render ───────────────────────────────────────────────────────────
-
     def _build(self):
         s = self._surf
         s.fill(C_BG)
-        self._draw_bg_trees(s)
+        self._draw_bg(s)
         self._draw_grass(s)
         self._draw_fence(s)
 
-    def _draw_bg_trees(self, s):
-        """코트 바깥 영역에 나무 배치."""
-        rng = random.Random(42)   # 고정 시드 → 항상 같은 배경
-        for _ in range(38):
-            tx = rng.randint(10, WIDTH - 10)
-            ty = rng.randint(10, HEIGHT - 10)
-            # 코트 안쪽은 건너뜀
-            if CX1 - 55 < tx < CX2 + 55 and CY1 - 55 < ty < CY2 + 55:
+    def _draw_bg(self, s):
+        rng = random.Random(42)
+        for _ in range(45):
+            tx = rng.randint(5, WIDTH - 5)
+            ty = rng.randint(5, HEIGHT - 5)
+            if (CX1 - 70 < tx < CX2 + 70) and (CY1 - 70 < ty < CY2 + 70):
                 continue
-            tr = rng.randint(13, 30)
-            g  = rng.randint(42, 85)
-            c_crown  = (10 + rng.randint(0, 12), g,      8  + rng.randint(0, 10))
-            c_shade  = (8  + rng.randint(0, 8),  g - 22, 6  + rng.randint(0, 6))
-            c_trunk  = (55 + rng.randint(0, 15), 32 + rng.randint(0, 10), 8)
-            # 나무 줄기
-            pygame.draw.rect(s, c_trunk,
-                             (tx - 3, ty + tr // 3, 6, tr // 2))
-            # 나무 그늘
-            pygame.draw.circle(s, c_shade, (tx + 3, ty - tr // 3 + 5), tr + 5)
-            # 나무 잎
-            pygame.draw.circle(s, c_crown, (tx, ty - tr // 3),          tr)
+            tr    = rng.randint(12, 28)
+            gv    = rng.randint(40, 80)
+            crown = (8 + rng.randint(0, 12), gv,      6 + rng.randint(0, 10))
+            shade = (6 + rng.randint(0, 8),  gv - 20, 4)
+            trunk = (52 + rng.randint(0, 14), 30 + rng.randint(0, 8), 7)
+            pygame.draw.rect(s, trunk, (tx - 3, ty + tr // 3, 6, tr // 2))
+            pygame.draw.circle(s, shade, (tx + 3, ty - tr // 3 + 6), tr + 5)
+            pygame.draw.circle(s, crown, (tx,     ty - tr // 3),     tr)
 
     def _draw_grass(self, s):
-        """교대 색상 세로 줄무늬 잔디 (영상의 잔디 텍스처 재현)."""
-        stripe_w = 50
-        for i, x in enumerate(range(CX1, CX2, stripe_w)):
-            c = C_GRASS if i % 2 == 0 else C_GRASS2
-            w = min(stripe_w, CX2 - x)
-            pygame.draw.rect(s, c, (x, CY1, w, CH))
+        field = [w2s(CX1, CY1), w2s(CX2, CY1),
+                 w2s(CX2, CY2), w2s(CX1, CY2)]
+        pygame.draw.polygon(s, C_GRASS, field)
+
+        sw = 50
+        for i, gx in enumerate(range(CX1, CX2, sw)):
+            c  = C_GRASS if i % 2 == 0 else C_GRASS2
+            x2 = min(gx + sw, CX2)
+            pts = [w2s(gx, CY1), w2s(x2, CY1),
+                   w2s(x2, CY2), w2s(gx, CY2)]
+            pygame.draw.polygon(s, c, pts)
+
+        for i in range(8):
+            gy = CY1 + (i + 0.5) * CH / 8
+            p1 = w2s(CX1, gy)
+            p2 = w2s(CX2, gy)
+            pygame.draw.line(s, (38, 84, 36), p1, p2, 1)
 
     def _draw_fence(self, s):
-        """
-        나무 울타리 — 상단보다 하단이 밝고 두드러짐
-        (아래쪽이 '앞'에 있는 느낌 → Pseudo-3D 깊이감)
-        """
-        wt = WALL_V
+        fd = FENCE_D
 
-        # ── 하단 벽 (앞쪽, 밝게) ──────────────────────
-        # 위쪽 면 (보이는 상판)
-        pygame.draw.rect(s, C_FENCE_T,
-                         (CX1 - wt, CY2, CW + wt * 2, wt))
-        # 앞면 (가장 밝음)
-        pygame.draw.rect(s, C_FENCE_F,
-                         (CX1 - wt, CY2 + wt, CW + wt * 2, wt // 2 + 4))
-        # 경계선
-        pygame.draw.rect(s, C_FENCE,
-                         (CX1, CY2 - 3, CW, 5))
+        # 하단 (가장 잘 보임)
+        pygame.draw.polygon(s, C_FENCE_F, [
+            w2s(CX1,      CY2),
+            w2s(CX2,      CY2),
+            w2s(CX2 + fd, CY2 + fd),
+            w2s(CX1 - fd, CY2 + fd),
+        ])
+        pygame.draw.polygon(s, C_FENCE_T, [
+            w2s(CX1 - fd, CY2 + fd),
+            w2s(CX2 + fd, CY2 + fd),
+            w2s(CX2 + fd, CY2 + fd + 6),
+            w2s(CX1 - fd, CY2 + fd + 6),
+        ])
 
-        # ── 상단 벽 (뒤쪽, 어둡게) ───────────────────
-        pygame.draw.rect(s, C_FENCE,
-                         (CX1 - wt, CY1 - wt, CW + wt * 2, wt))
-        pygame.draw.rect(s, C_FENCE_T,
-                         (CX1,      CY1 - 2,  CW, 4))
+        # 상단 (어두움)
+        pygame.draw.polygon(s, C_FENCE_T, [
+            w2s(CX1 - fd, CY1 - fd),
+            w2s(CX2 + fd, CY1 - fd),
+            w2s(CX2,      CY1),
+            w2s(CX1,      CY1),
+        ])
 
-        # ── 좌측 벽 ──────────────────────────────────
-        pygame.draw.rect(s, C_FENCE,
-                         (CX1 - wt, CY1 - wt, wt, CH + wt * 2))
-        pygame.draw.rect(s, C_FENCE_F,
-                         (CX1 - 4,  CY1,      5,  CH))
+        # 좌측
+        pygame.draw.polygon(s, C_FENCE, [
+            w2s(CX1 - fd, CY1 - fd),
+            w2s(CX1,      CY1),
+            w2s(CX1,      CY2),
+            w2s(CX1 - fd, CY2 + fd),
+        ])
 
-        # ── 우측 벽 ──────────────────────────────────
-        pygame.draw.rect(s, C_FENCE,
-                         (CX2, CY1 - wt, wt, CH + wt * 2))
-        pygame.draw.rect(s, C_FENCE_F,
-                         (CX2,      CY1, 5, CH))
+        # 우측
+        pygame.draw.polygon(s, C_FENCE, [
+            w2s(CX2,      CY1),
+            w2s(CX2 + fd, CY1 - fd),
+            w2s(CX2 + fd, CY2 + fd),
+            w2s(CX2,      CY2),
+        ])
 
-        # ── 울타리 기둥 ───────────────────────────────
-        post_gap = 52
-        post_w   = 9
+        # 코트 내부 테두리
+        pygame.draw.polygon(s, C_FENCE_T,
+            [w2s(CX1, CY1), w2s(CX2, CY1),
+             w2s(CX2, CY2), w2s(CX1, CY2)], 2)
 
-        for px in range(CX1, CX2 + post_gap, post_gap):
-            # 하단
-            pygame.draw.rect(s, C_FENCE_F,
-                             (px - post_w // 2, CY2, post_w, wt + 4))
-            # 상단
-            pygame.draw.rect(s, C_FENCE_T,
-                             (px - post_w // 2, CY1 - wt, post_w, wt))
+        # 하단 기둥
+        for gx in range(CX1, CX2 + 52, 52):
+            pygame.draw.line(s, C_FENCE_T, w2s(gx, CY2), w2s(gx, CY2 + fd), 4)
 
-        for py in range(CY1, CY2 + post_gap, post_gap):
-            # 좌측
-            pygame.draw.rect(s, C_FENCE_T,
-                             (CX1 - wt, py - post_w // 2, wt, post_w))
-            # 우측
-            pygame.draw.rect(s, C_FENCE_T,
-                             (CX2, py - post_w // 2, wt, post_w))
-
-        # ── 코너 강조 ─────────────────────────────────
-        cs = wt + 6
-        for cx, cy in [(CX1, CY1), (CX2, CY1), (CX1, CY2), (CX2, CY2)]:
-            pygame.draw.rect(s, C_FENCE_T,
-                             (cx - cs // 2, cy - cs // 2, cs, cs))
-
-    # ── Draw ─────────────────────────────────────────────────────────────────
+        # 좌우 기둥
+        for gy in range(CY1, CY2 + 52, 52):
+            pygame.draw.line(s, C_FENCE_T, w2s(CX1, gy),      w2s(CX1 - fd, gy), 3)
+            pygame.draw.line(s, C_FENCE_T, w2s(CX2, gy),      w2s(CX2 + fd, gy), 3)
 
     def draw(self, screen):
         screen.blit(self._surf, (0, 0))
