@@ -80,9 +80,9 @@ class Game:
                 self.state = PLAY
 
         elif self.state == PLAY:
-            if k == pygame.K_f:
+            if k == pygame.K_LSHIFT:
                 self._action(self.p1)
-            if k == pygame.K_h:
+            if k == pygame.K_SLASH:
                 self._action(self.p2)
             if k == pygame.K_ESCAPE:
                 self.state = MENU
