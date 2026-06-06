@@ -1,7 +1,6 @@
 """
 Battle Ball — 1v1  |  player.py
-플레이어: 사다리꼴 경계 / 사람 형태 /
-          걷기 애니메이션 / 공 소지 → 손에 들기 / 3단계 던지기 모션
+플레이어: 사다리꼴 경계 / 사람 형태 / 걷기 + 던지기 + 앞구르기 모션
 """
 
 import math
@@ -16,8 +15,12 @@ from settings import (
 ALIVE   = "alive"
 KNOCKED = "knocked"
 BLINK   = "blink"
+ROLLING = "rolling"
 
-THROW_DUR = 0.34
+THROW_DUR     = 0.34
+ROLL_DUR      = 0.42    # 구르기 지속 시간 (초)
+ROLL_SPEED    = 430.0   # 구르기 이동 속도
+ROLL_COOLDOWN = 1.5     # 다음 구르기까지 대기 시간
 
 
 class Player:
@@ -43,12 +46,43 @@ class Player:
         self._is_moving = False
         self._throw_t   = 0.0
 
+        # 구르기
+        self._roll_t   = 0.0   # 남은 구르기 시간
+        self._roll_cd  = 0.0   # 쿨다운
+        self._roll_vx  = 0.0   # 구르기 방향 x
+        self._roll_vy  = 0.0   # 구르기 방향 y
+        self._roll_ang = 0.0   # 회전 애니메이션 각도
+
     # ── Update ───────────────────────────────────────────────────────────────
 
     def update(self, dt: float, pressed):
         self._ring_a += dt * 3.2
         if self._flash   > 0: self._flash   = max(0.0, self._flash   - dt)
         if self._throw_t > 0: self._throw_t = max(0.0, self._throw_t - dt)
+        if self._roll_cd > 0: self._roll_cd = max(0.0, self._roll_cd - dt)
+
+        # ── 구르기 상태 (이동 제어 별도 처리) ────────
+        if self.state == ROLLING:
+            self._roll_t   -= dt
+            self._roll_ang += dt * 18.0   # 빠른 회전
+
+            self.x += self._roll_vx * ROLL_SPEED * dt
+            self.y += self._roll_vy * ROLL_SPEED * dt
+
+            x_min, x_max = court_x_limits(self.y, P_RADIUS)
+            self.x = max(x_min, min(x_max, self.x))
+            self.y = max(CY1 + P_RADIUS, min(CY2 - P_RADIUS, self.y))
+            if self.pid == 1: self.x = min(self.x, MID_X - P_RADIUS - 2)
+            else:             self.x = max(self.x, MID_X + P_RADIUS + 2)
+
+            if self.held:
+                self.held.x = self.x
+                self.held.y = self.y
+
+            if self._roll_t <= 0:
+                self.state    = ALIVE
+                self._roll_cd = ROLL_COOLDOWN
+            return   # 구르기 중에는 일반 이동 코드 건너뜀
 
         if self.state == KNOCKED:
             self._kt -= dt
@@ -79,12 +113,9 @@ class Player:
         self.x += dx * PLAYER_SPD * dt
         self.y += dy * PLAYER_SPD * dt
 
-        # 원근 사다리꼴 경계
         x_min, x_max = court_x_limits(self.y, P_RADIUS)
         self.x = max(x_min, min(x_max, self.x))
         self.y = max(CY1 + P_RADIUS, min(CY2 - P_RADIUS, self.y))
-
-        # 중앙선 제한
         if self.pid == 1: self.x = min(self.x, MID_X - P_RADIUS - 2)
         else:             self.x = max(self.x, MID_X + P_RADIUS + 2)
 
@@ -107,8 +138,20 @@ class Player:
         self._throw_t = THROW_DUR
         return True
 
+    def try_roll(self) -> bool:
+        """앞구르기 시작. ALIVE 상태이고 쿨다운이 없을 때만 가능."""
+        if self.state != ALIVE or self._roll_cd > 0:
+            return False
+        self._roll_vx  = self.facing[0]
+        self._roll_vy  = self.facing[1]
+        self.state     = ROLLING
+        self._roll_t   = ROLL_DUR
+        return True
+
     def get_hit(self):
-        if self.state != ALIVE: return
+        # ROLLING, BLINK 상태는 무적
+        if self.state in (KNOCKED, BLINK, ROLLING):
+            return
         if self.held:
             self.held.state     = "loose"
             self.held.vx        = 0.0
@@ -134,15 +177,28 @@ class Player:
         if not self._bvis: return
         sx, sy = w2s(self.x, self.y)
         r = persp_r(self.y, P_RADIUS)
-        pygame.draw.ellipse(screen, C_SHADOW,
-                            (sx - r, sy + int(r * 0.22),
-                             r * 2, max(3, int(r * 0.40))))
+
+        if self.state == ROLLING:
+            # 구르기 중: 방향으로 늘어난 납작한 그림자
+            sw = max(5, int(r * 1.30))
+            sh = max(2, int(r * 0.30))
+            pygame.draw.ellipse(screen, C_SHADOW,
+                                (sx - sw, sy + int(r * 0.08), sw * 2, sh * 2))
+        else:
+            pygame.draw.ellipse(screen, C_SHADOW,
+                                (sx - r, sy + int(r * 0.22),
+                                 r * 2, max(3, int(r * 0.40))))
 
     def draw(self, screen):
         if not self._bvis: return
         sx, sy = w2s(self.x, self.y)
         r  = persp_r(self.y, P_RADIUS)
         fx, fy = self.facing
+
+        # ── 구르기 ──────────────────────────────────
+        if self.state == ROLLING:
+            self._draw_rolling(screen, sx, sy, r)
+            return
 
         # ── 넘어짐 ──────────────────────────────────
         if self.state == KNOCKED:
@@ -159,7 +215,6 @@ class Player:
 
         c = C_WHITE if (self._flash > 0 and int(self._flash * 22) % 2) else self.color
 
-        # ── 비율 계산 ─────────────────────────────────
         head_r  = max(4, int(r * 0.48))
         body_w  = max(3, int(r * 0.37))
         body_h  = max(4, int(r * 0.58))
@@ -169,13 +224,11 @@ class Player:
         arm_spr = max(2, int(r * 0.28))
         lw      = max(1, int(r * 0.18))
 
-        # Y 위치
         hip_y   = sy + int(r * 0.20)
         chest_y = hip_y  - body_h * 2
         sh_y    = chest_y + int(body_h * 0.28)
         head_cy = chest_y - head_r - max(1, int(r * 0.08))
 
-        # 걷기 스윙
         ws = math.sin(self._walk_t * 8.5) * (1.0 if self._is_moving else 0.0)
 
         ts       = self._throw_side
@@ -209,40 +262,29 @@ class Player:
         # ── 던지는 팔 위치 계산 ───────────────────────
         if self._throw_t > 0:
             prog = 1.0 - self._throw_t / THROW_DUR
-
             if prog < 0.35:
-                # 1단계: 와인드업 — 뒤로 당기고 위로
                 t    = prog / 0.35
                 ease = t * t
                 tex  = throw_ax - int(fx * arm_len * 1.0 * ease)
                 tey  = throw_ay - int(r  * 0.65 * ease)
-
             elif prog < 0.72:
-                # 2단계: 릴리즈 — 앞으로 힘차게
                 t    = (prog - 0.35) / 0.37
                 ease = 1.0 - (1.0 - t) ** 3
                 tex  = throw_ax - int(fx * arm_len * (1.0 - ease)) \
                                 + int(fx * arm_len * 1.3 * ease)
                 tey  = throw_ay - int(r * 0.65 * (1.0 - ease)) \
                                 + int(r * 0.18 * ease)
-
             else:
-                # 3단계: 팔로우스루 — 자연스럽게 복귀
                 t   = (prog - 0.72) / 0.28
                 tex = throw_ax + int(fx * arm_len * (1.3 - t * 0.6))
                 tey = throw_ay + int(r  * 0.18 * (1.0 - t))
-
         elif self.held:
-            # 공 소지: 팔 앞으로 뻗어 손에 들기
             tex = throw_ax + int(fx * arm_len * 0.88) + int(ts * arm_spr * 0.25)
             tey = throw_ay + int(fy * arm_len * 0.40)
-
         else:
-            # 일반 걷기 스윙
             tex = throw_ax + int(ts * arm_spr)
             tey = sh_y + arm_len - int(ws * ts * arm_len * 0.45)
 
-        # 던지는 팔 그리기
         pygame.draw.line(screen, self.cdark, (throw_ax, throw_ay), (tex, tey), lw+1)
         pygame.draw.line(screen, c,          (throw_ax, throw_ay), (tex, tey), lw)
 
@@ -270,3 +312,62 @@ class Player:
         eye_x = sx + int(fx * head_r * 0.55)
         eye_y = head_cy + int(fy * head_r * 0.45)
         pygame.draw.circle(screen, C_WHITE, (eye_x, eye_y), max(1, head_r // 3))
+
+    # ── 구르기 전용 렌더링 ────────────────────────────────────────────────────
+
+    def _draw_rolling(self, screen, sx, sy, r):
+        """납작한 회전 타원 + 잔상 + 회전 마크."""
+        c  = self.color
+        ra = math.atan2(self._roll_vy, self._roll_vx)   # 구르기 방향 각도
+
+        # ── 잔상 (trail) ──────────────────────────────
+        for i in range(1, 5):
+            px = self.x - self._roll_vx * ROLL_SPEED * i * 0.028
+            py = self.y - self._roll_vy * ROLL_SPEED * i * 0.028
+            tsx, tsy = w2s(px, py)
+            tr   = max(1, int(persp_r(py, P_RADIUS) * 0.58 * (1 - i * 0.20)))
+            frac = max(0.0, 0.42 - i * 0.09)
+            pygame.draw.circle(screen,
+                               tuple(int(v * frac) for v in c),
+                               (tsx, tsy), tr)
+
+        # ── 회전 타원 (납작하게 구르는 형태) ─────────
+        a_ax = max(5, int(r * 1.30))   # 구르기 방향 반지름
+        b_ax = max(3, int(r * 0.48))   # 수직 방향 반지름
+
+        pts_dark = _ellipse_pts(sx, sy + 1, a_ax, b_ax, ra)
+        pts_fill = _ellipse_pts(sx, sy,     a_ax, b_ax, ra)
+        if len(pts_dark) >= 3:
+            pygame.draw.polygon(screen, self.cdark, pts_dark)
+            pygame.draw.polygon(screen, c,          pts_fill)
+
+        # ── 회전 마크 (2개 선분 — X 형태로 회전) ─────
+        for i in range(2):
+            sa   = self._roll_ang + i * math.pi / 2
+            cos_ra, sin_ra = math.cos(ra), math.sin(ra)
+            cos_sa, sin_sa = math.cos(sa), math.sin(sa)
+            # 타원 내부에서 회전하는 선의 끝점
+            ex = sx + int((a_ax * cos_sa * cos_ra - b_ax * sin_sa * sin_ra) * 0.62)
+            ey = sy + int((a_ax * cos_sa * sin_ra + b_ax * sin_sa * cos_ra) * 0.62)
+            pygame.draw.line(screen, self.cdark,
+                             (sx, sy), (ex, ey), max(1, r // 7))
+
+        # ── 쿨다운 표시 (구르기 끝난 뒤 잠깐) ────────
+        if self._roll_cd > 0 and self.state != ROLLING:
+            frac = self._roll_cd / ROLL_COOLDOWN
+            arc_r = r + 5
+            arc_c = (80, 80, 80)
+            pygame.draw.circle(screen, arc_c, (sx, sy), arc_r, 1)
+
+
+def _ellipse_pts(cx, cy, a, b, angle, n=14):
+    """회전 타원의 꼭짓점 좌표 반환."""
+    cos_a, sin_a = math.cos(angle), math.sin(angle)
+    pts = []
+    for j in range(n):
+        t   = j * math.tau / n
+        ct  = math.cos(t)
+        st  = math.sin(t)
+        pts.append((int(cx + a * ct * cos_a - b * st * sin_a),
+                    int(cy + a * ct * sin_a + b * st * cos_a)))
+    return pts
