@@ -56,6 +56,8 @@ class Ball:
             self.vx += v_perp_x * spin_force * dt
             self.vy += v_perp_y * spin_force * dt
 
+            self.w = self.w * 0.99
+
         if self.x < CX1 + B_RADIUS: self.x = CX1 + B_RADIUS; self.vx =  abs(self.vx) * 0.55
         if self.x > CX2 - B_RADIUS: self.x = CX2 - B_RADIUS; self.vx = -abs(self.vx) * 0.55
         if self.y < CY1 + B_RADIUS: self.y = CY1 + B_RADIUS; self.vy =  abs(self.vy) * 0.55
