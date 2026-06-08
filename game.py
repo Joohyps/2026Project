@@ -39,8 +39,8 @@ class Game:
         self._reset()
 
     def _reset(self):
-        k1 = dict(u=pygame.K_w, d=pygame.K_s, l=pygame.K_a, r=pygame.K_d)
-        k2 = dict(u=pygame.K_i, d=pygame.K_k, l=pygame.K_j, r=pygame.K_l)
+        k1 = dict(u=pygame.K_w, d=pygame.K_s, l=pygame.K_a, r=pygame.K_d, ls = pygame.K_q, rs = pygame.K_e)
+        k2 = dict(u=pygame.K_i, d=pygame.K_k, l=pygame.K_j, r=pygame.K_l, ls = pygame.K_u, rs = pygame.K_o)
         self.p1 = Player(1, *P1_START, k1, C_P1, C_P1D)
         self.p2 = Player(2, *P2_START, k2, C_P2, C_P2D)
         self.balls = [

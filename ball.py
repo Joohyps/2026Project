@@ -7,7 +7,7 @@ HELD 상태일 때는 player.draw()에서 직접 그림
 import math
 import pygame
 from settings import (
-    CX1, CX2, CY1, CY2, B_RADIUS,
+    CX1, CX2, CY1, CY2, B_RADIUS, SPIN_K,
     GRAVITY, THROW_SPD, THROW_VZ, BOUNCE_K, ROLL_DAMP,
     C_BALL, C_BALLD, C_SHADOW,
     w2s, persp_r, persp_z_scale,
@@ -23,15 +23,17 @@ class Ball:
         self.bid = bid
         self.x   = float(x);  self.y  = float(y);  self.z  = 0.0
         self.vx  = 0.0;       self.vy = 0.0;        self.vz = 0.0
+        self.w = 0.0
         self.state     = LOOSE
         self.owner     = None
         self.thrown_by = None
 
-    def throw(self, dx: float, dy: float):
+    def throw(self, dx: float, dy: float, spin:float):
         self.state = THROWN
         self.vx    = dx * THROW_SPD
         self.vy    = dy * THROW_SPD
         self.vz    = THROW_VZ
+        self.w     = spin
         self.owner = None
 
     def update(self, dt: float):
@@ -42,6 +44,17 @@ class Ball:
         self.z  += self.vz  * dt
         self.x  += self.vx  * dt
         self.y  += self.vy  * dt
+
+        if abs(self.w) >= 10:
+            v_perp_norm = (self.vy**2 + self.vx**2)**(1/2)
+            if v_perp_norm <= 0.1:
+                v_perp_norm = 10
+            v_perp_x = self.vy / v_perp_norm
+            v_perp_y = -self.vx / v_perp_norm
+
+            spin_force = SPIN_K * (self.vx**2 + self.vy**2)**(1/2) * self.w
+            self.vx += v_perp_x * spin_force * dt
+            self.vy += v_perp_y * spin_force * dt
 
         if self.x < CX1 + B_RADIUS: self.x = CX1 + B_RADIUS; self.vx =  abs(self.vx) * 0.55
         if self.x > CX2 - B_RADIUS: self.x = CX2 - B_RADIUS; self.vx = -abs(self.vx) * 0.55

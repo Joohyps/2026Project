@@ -7,7 +7,7 @@ import math
 import pygame
 from settings import (
     CX1, CX2, CY1, CY2, MID_X,
-    P_RADIUS, B_RADIUS, PLAYER_SPD, KNOCK_DUR,
+    P_RADIUS, B_RADIUS, PLAYER_SPD, KNOCK_DUR, MAX_SPIN,
     C_CYAN, C_WHITE, C_GOLD, C_SHADOW, C_BALL, C_BALLD,
     w2s, persp_r, court_x_limits,
 )
@@ -28,6 +28,7 @@ class Player:
                  keys: dict, color: tuple, color_dark: tuple):
         self.pid    = pid
         self.x      = float(x);  self.y  = float(y)
+        self.__spin = 0.0
         self._sx    = float(x);  self._sy = float(y)
 
         self.state  = ALIVE
@@ -52,6 +53,13 @@ class Player:
         self._roll_vx  = 0.0   # 구르기 방향 x
         self._roll_vy  = 0.0   # 구르기 방향 y
         self._roll_ang = 0.0   # 회전 애니메이션 각도
+
+    @property
+    def spin(self):
+        return self.__spin
+    @spin.setter
+    def spin(self, value):
+        self.__spin = max(-MAX_SPIN, min(value, MAX_SPIN))
 
     # ── Update ───────────────────────────────────────────────────────────────
 
@@ -101,6 +109,24 @@ class Player:
         if pressed[self.keys['d']]: dy += 1
         if pressed[self.keys['l']]: dx -= 1
         if pressed[self.keys['r']]: dx += 1
+        if pressed[self.keys['ls']] and self.held:
+            if self.spin >= 0 :
+                self.spin += 3
+            else:
+                self.spin = 0
+                self.spin += 3
+        if pressed[self.keys['rs']] and self.held:
+            if self.spin <= 0 :
+                self.spin -=3
+            else:
+                self.spin = 0
+                self.spin -= 3
+
+        if self.spin != 0:
+            if self.spin>0:
+                self.spin -= 1
+            else:
+                self.spin += 1
         sp = math.hypot(dx, dy)
         if sp > 0:
             dx /= sp; dy /= sp
@@ -133,7 +159,8 @@ class Player:
         ball.thrown_by = self
         ball.x = self.x + fx * (P_RADIUS + B_RADIUS + 6)
         ball.y = self.y + fy * (P_RADIUS + B_RADIUS + 6)
-        ball.throw(fx, fy)
+        ball.throw(fx, fy, self.spin)
+        self.spin = 0
         self.held     = None
         self._throw_t = THROW_DUR
         return True
@@ -188,6 +215,59 @@ class Player:
             pygame.draw.ellipse(screen, C_SHADOW,
                                 (sx - r, sy + int(r * 0.22),
                                  r * 2, max(3, int(r * 0.40))))
+
+    def draw_power_bar(self, screen):
+        # 게이지 바 크기
+        BAR_WIDTH = persp_r(self.y, 12)
+        BAR_HEIGHT = persp_r(self.y, 60)
+
+        # 플레이어 옆 위치
+        if self.spin > 10:
+            spin = self.spin
+            bar_x, bar_y = w2s(self.x - 30, self.y - BAR_HEIGHT // 2)
+        elif self.spin < -10:
+            spin = -self.spin
+            bar_x, bar_y = w2s(self.x + 30, self.y - BAR_HEIGHT // 2)
+        else:
+            return
+
+        # 배경 (회색)
+        pygame.draw.rect(
+            screen,
+            (100, 100, 100),
+            (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT)
+        )
+
+        # power 비율
+        ratio = max(0, min(1, spin / MAX_SPIN))
+
+        # 채워질 높이
+        fill_height = int(BAR_HEIGHT * ratio)
+
+        # 색상 보간
+        # power=0 -> 초록(0,255,0)
+        # power=1 -> 빨강(255,0,0)
+        r = int(255 * ratio)
+        g = int(255 * (1 - ratio))
+        color = (r, g, 0)
+
+        # 아래에서 위로 차오르도록
+        fill_rect = pygame.Rect(
+            bar_x,
+            bar_y + BAR_HEIGHT - fill_height,
+            BAR_WIDTH,
+            fill_height
+        )
+
+        pygame.draw.rect(screen, color, fill_rect)
+
+        # 테두리
+        pygame.draw.rect(
+            screen,
+            (255, 255, 255),
+            (bar_x, bar_y, BAR_WIDTH, BAR_HEIGHT),
+            2
+        )
 
     def draw(self, screen):
         if not self._bvis: return
@@ -312,6 +392,8 @@ class Player:
         eye_x = sx + int(fx * head_r * 0.55)
         eye_y = head_cy + int(fy * head_r * 0.45)
         pygame.draw.circle(screen, C_WHITE, (eye_x, eye_y), max(1, head_r // 3))
+
+        self.draw_power_bar(screen)
 
     # ── 구르기 전용 렌더링 ────────────────────────────────────────────────────
 
