@@ -112,3 +112,88 @@ class Ball:
 
     def dist_sq(self, px: float, py: float) -> float:
         return (self.x - px) ** 2 + (self.y - py) ** 2
+
+
+ARM_TIME = 2.0          # 폭발까지 시간
+EXPLOSION_RADIUS = 120
+FLASH_PERIOD = 0.15
+
+
+class Bomb(Ball):
+
+    def __init__(self, x, y, bid):
+        super().__init__(x, y, bid)
+
+        self.armed = False
+        self.exploded = False
+        self.explosion_radius = EXPLOSION_RADIUS
+        self.timer = 0.0
+        self.explosion_spawned = False
+
+    def update(self, dt):
+
+        if self.exploded:
+            return
+
+        prev_z = self.z
+
+        super().update(dt)
+
+        # 최초 착지 감지
+        if (not self.armed
+                and prev_z > 0
+                and self.z == 0
+                and self.state != THROWN):
+
+            self.armed = True
+            self.timer = ARM_TIME
+
+            self.vx = 0
+            self.vy = 0
+            self.vz = 0
+
+        # 카운트다운
+        if self.armed:
+
+            self.timer -= dt
+
+            if self.timer <= 0:
+                self.explode()
+
+    def explode(self):
+
+        self.exploded = True
+
+
+    def draw(self, screen):
+
+        if self.exploded:
+            return
+
+        sx, sy = w2s(self.x, self.y)
+
+        r = persp_r(self.y, B_RADIUS)
+
+        zs = persp_z_scale(self.y)
+
+        bsy = sy - int(self.z * zs)
+
+        color = (0, 0, 0)
+
+        if self.armed:
+
+            progress = 1.0 - (self.timer / ARM_TIME)
+            progress = max(0.0, min(1.0, progress))
+
+            # 0.30초 → 0.03초로 점점 빨라짐
+            flash_period = 0.30 - 0.27 * progress
+
+            phase = int(pygame.time.get_ticks() /
+                        (flash_period * 1000)) % 2
+
+            if phase == 0:
+                color = (0, 0, 0)
+            else:
+                color = (255, 40, 40)
+
+        pygame.draw.circle(screen, color, (sx, bsy), r)

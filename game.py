@@ -16,8 +16,9 @@ from settings import (
 )
 from court   import Court
 from player  import Player, ALIVE, KNOCKED, ROLLING
-from ball    import Ball, LOOSE, HELD, THROWN
-from effects import Effects
+from ball    import Ball, LOOSE, HELD, THROWN, Bomb
+import random
+from effects import Effects, ExplosionEffect
 
 MENU = "menu"
 PLAY = "play"
@@ -52,6 +53,11 @@ class Game:
         self.timer  = float(GAME_SECS)
         self.winner = None
         self.fx     = Effects()
+
+        self.next_bid = 1000
+
+        self.bomb_spawn_interval = 1.0
+        self.bomb_spawn_timer = self.bomb_spawn_interval
 
     # ── Events ───────────────────────────────────────────────────────────────
 
@@ -90,11 +96,55 @@ class Game:
         self.p1.update(dt, pr)
         self.p2.update(dt, pr)
         for b in self.balls: b.update(dt)
+
+        self.bomb_spawn_timer -= dt
+
+        has_bomb = any(
+            isinstance(b, Bomb)
+            for b in self.balls
+        )
+
+        if self.bomb_spawn_timer <= 0 and not has_bomb:
+            self.spawn_bomb()
+
+            self.bomb_spawn_timer = (
+                self.bomb_spawn_interval
+            )
+
         self._auto_pickup()
+
+        for b in self.balls:
+
+            if not isinstance(b, Bomb):
+                continue
+
+            if b.exploded and not b.explosion_spawned:
+                sx, sy = w2s(b.x, b.y)
+
+                self.fx.spawn_explosion(
+                    sx,
+                    sy
+                )
+
+                b.explosion_spawned = True
+
         self._check_hits()
+
+        self.balls = [
+
+            b for b in self.balls
+
+            if not (
+                    isinstance(b, Bomb)
+                    and b.exploded
+            )
+        ]
+
         self.fx.update(dt)
         self.timer = max(0.0, self.timer - dt)
         if self.timer == 0.0: self._end()
+
+
 
     def _pickup(self, p):
         if p.state in (KNOCKED, ROLLING): return
@@ -116,7 +166,15 @@ class Game:
 
     def _check_hits(self):
         for b in self.balls:
-            if b.state != THROWN or not b.thrown_by: continue
+
+            if isinstance(b, Bomb):
+                continue
+
+            if b.state != THROWN:
+                continue
+
+            if not b.thrown_by:
+                continue
             t = self.p2 if b.thrown_by is self.p1 else self.p1
             if t.state != ALIVE: continue   # ROLLING도 여기서 걸러짐 (ALIVE 아님)
             if math.hypot(b.x - t.x, b.y - t.y) < B_RADIUS + P_RADIUS and b.z < HIT_Z_MAX:
@@ -126,6 +184,41 @@ class Game:
                 t.get_hit()
                 b.state = LOOSE; b.thrown_by = None
                 b.vx *= 0.25; b.vy *= 0.25; b.vz = 120.0
+
+        for b in self.balls:
+
+            if not isinstance(b, Bomb):
+                continue
+
+            if not b.exploded:
+                continue
+
+            for p in (self.p1, self.p2):
+
+                if p.state != ALIVE:
+                    continue
+
+                dist = math.hypot(
+                    p.x - b.x,
+                    p.y - b.y
+                )
+
+                if dist < b.explosion_radius:
+                    p.get_hit()
+                    if p == self.p1:
+                        self.p2.score += 1
+                    if p == self.p2:
+                        self.p1.score += 1
+
+                    sx, sy = w2s(
+                        p.x,
+                        p.y
+                    )
+
+                    self.fx.spawn_hit(
+                        sx,
+                        sy
+                    )
 
     def _end(self):
         self.state = OVER
@@ -173,6 +266,27 @@ class Game:
             True, (130, 130, 130))
         self.screen.blit(h, h.get_rect(centerx=WIDTH // 2, bottom=HEIGHT - 4))
 
+        if self.p1.held and isinstance(self.p1.held, Bomb):
+            txt = self.f_xs.render(
+                "BOMB",
+                True,
+                (255, 80, 80)
+            )
+
+            self.screen.blit(txt, (40, 95))
+
+        if self.p2.held and isinstance(self.p2.held, Bomb):
+            txt = self.f_xs.render(
+                "BOMB",
+                True,
+                (255, 80, 80)
+            )
+
+            self.screen.blit(
+                txt,
+                (WIDTH - 100, 95)
+            )
+
     def _draw_menu(self):
         self.screen.fill((10, 22, 10))
         t = self.f_huge.render("BATTLE  BALL", True, C_GOLD)
@@ -208,3 +322,40 @@ class Game:
         self.screen.blit(sc, sc.get_rect(centerx=WIDTH // 2, centery=HEIGHT // 2 + 28))
         rs = self.f_xs.render("Space 재시작   ESC 메뉴", True, (195, 195, 195))
         self.screen.blit(rs, rs.get_rect(centerx=WIDTH // 2, centery=HEIGHT // 2 + 88))
+
+    def spawn_bomb(self):
+
+        while True:
+
+            x = random.uniform(
+                CX1 + 100,
+                CX2 - 100
+            )
+
+            y = random.uniform(
+                CY1 + 100,
+                CY2 - 100
+            )
+
+            if (
+                    math.hypot(
+                        x - self.p1.x,
+                        y - self.p1.y
+                    ) > 150
+                    and
+                    math.hypot(
+                        x - self.p2.x,
+                        y - self.p2.y
+                    ) > 150
+            ):
+                break
+
+        bomb = Bomb(
+            x,
+            y,
+            self.next_bid
+        )
+
+        self.next_bid += 1
+
+        self.balls.append(bomb)
