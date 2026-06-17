@@ -1,11 +1,16 @@
 """
 Battle Ball — 1v1  |  effects.py
-파티클 시스템 — 명중 이펙트 / 황금 중앙선
+파티클 시스템 — 명중 이펙트 / 폭발 이펙트 / 황금 중앙선
 """
 
 import math, random
 import pygame
-from settings import CX1, CX2, CY1, CY2, MID_X, C_GOLD, C_GOLD2, C_WHITE, w2s
+from settings import (
+    CX1, CX2, CY1, CY2, MID_X,
+    C_GOLD, C_GOLD2, C_WHITE,
+    EXPLOSION_RADIUS,
+    w2s,
+)
 
 _CL_TOP = w2s(MID_X, CY1)
 _CL_BOT = w2s(MID_X, CY2)
@@ -26,21 +31,58 @@ class _Particle:
                            (int(self.x), int(self.y)), r)
 
 
+class ExplosionEffect:
+    """폭발 원형 이펙트."""
+
+    def __init__(self, x: int, y: int):
+        self.x = x;  self.y = y
+        self.life     = 0.55
+        self.max_life = 0.55
+
+    def update(self, dt):
+        self.life -= dt
+
+    @property
+    def dead(self):
+        return self.life <= 0
+
+    def draw(self, screen):
+        t = 1.0 - (self.life / self.max_life)
+        r = int((20 + 120 * t) / 140 * EXPLOSION_RADIUS)
+
+        pygame.draw.circle(screen, (255, 180, 0),   (self.x, self.y), max(5, r), 6)
+        pygame.draw.circle(screen, (255, 255, 100), (self.x, self.y), max(3, r // 2), 3)
+
+
 class Effects:
     def __init__(self):
-        self._particles = []; self._cl_particles = []; self._cl_timer = 0.0
+        self._particles    = []
+        self._explosions   = []
+        self._cl_particles = []
+        self._cl_timer     = 0.0
 
     def spawn_hit(self, x, y):
         for _ in range(22):
-            ang = random.uniform(0, math.tau); spd = random.uniform(55, 210)
+            ang   = random.uniform(0, math.tau)
+            spd   = random.uniform(55, 210)
             color = random.choice([C_WHITE, C_GOLD, (255,200,100), (255,255,150)])
-            life = random.uniform(0.25, 0.65); r = random.randint(2, 6)
+            life  = random.uniform(0.25, 0.65)
+            r     = random.randint(2, 6)
             self._particles.append(
                 _Particle(x, y, math.cos(ang)*spd, math.sin(ang)*spd-60, color, life, r))
+
+    def spawn_explosion(self, x, y):
+        """폭발 원형 이펙트 + 불꽃 파편."""
+        self._explosions.append(ExplosionEffect(int(x), int(y)))
+        for _ in range(3):
+            self.spawn_hit(x, y)
 
     def update(self, dt):
         self._particles    = [p for p in self._particles    if p.update(dt)]
         self._cl_particles = [p for p in self._cl_particles if p.update(dt)]
+        for e in self._explosions: e.update(dt)
+        self._explosions   = [e for e in self._explosions if not e.dead]
+
         self._cl_timer += dt
         if self._cl_timer > 0.03:
             self._cl_timer = 0.0
@@ -57,4 +99,5 @@ class Effects:
         for p in self._cl_particles: p.draw(screen)
 
     def draw(self, screen):
-        for p in self._particles: p.draw(screen)
+        for p in self._particles:  p.draw(screen)
+        for e in self._explosions: e.draw(screen)

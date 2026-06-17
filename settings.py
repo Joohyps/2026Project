@@ -91,3 +91,8 @@ def court_x_limits(gy: float, r_base: float) -> tuple:
     r_screen = persp_r(gy, r_base)
     margin = r_screen * (CW * 0.5) / hw
     return CX1 + margin, CX2 - margin
+# ── 폭탄 ─────────────────────────────────────────────────────────────────────
+ARM_TIME         = 2.5    # 착지 후 폭발까지 시간 (초)
+EXPLOSION_RADIUS = 120    # 폭발 범위 (px)
+C_BOMB           = (20,  20,  20)
+C_BOMBD          = (80,  40,  0)
