@@ -9,8 +9,9 @@ from settings import (
     CX1, CX2, CY1, CY2, MID_X,
     P_RADIUS, B_RADIUS, PLAYER_SPD, KNOCK_DUR, MAX_SPIN,
     C_CYAN, C_WHITE, C_GOLD, C_SHADOW, C_BALL, C_BALLD,
-    w2s, persp_r, court_x_limits,
+    w2s, persp_r, court_x_limits, C_BOMBD, C_BOMB, ARM_TIME
 )
+from ball import Ball, Bomb
 
 ALIVE   = "alive"
 KNOCKED = "knocked"
@@ -376,12 +377,39 @@ class Player:
                 rx  = tex + int(math.cos(a) * (br + 5))
                 ry  = tey + int(math.sin(a) * (br + 5) * 0.55)
                 t_v = abs(math.sin(a + self._ring_a)) ** 2
-                rc  = tuple(int(cv * (0.35 + 0.65 * t_v)) for cv in C_CYAN)
+                if isinstance(self.held, Bomb):
+                    rc = tuple(int(cv * (0.35 + 0.65 * t_v)) for cv in C_GOLD)
+                else:
+                    rc = tuple(int(cv * (0.35 + 0.65 * t_v)) for cv in C_CYAN)
                 pygame.draw.circle(screen, rc, (rx, ry), max(1, br // 3 + 1))
-            pygame.draw.circle(screen, C_BALLD, (tex, tey + 1), br)
-            pygame.draw.circle(screen, C_BALL,  (tex, tey),     br)
+
             hl = max(1, br // 3)
-            pygame.draw.circle(screen, (255, 130, 130), (tex - hl, tey - hl), hl)
+            if isinstance(self.held, Bomb):
+                if self.held.armed:
+
+                    progress = 1.0 - (self.held.timer / ARM_TIME)
+                    progress = max(0.0, min(1.0, progress))
+
+                    # 0.30초 → 0.03초로 점점 빨라짐
+                    flash_period = 0.30 - 0.27 * progress
+
+                    phase = int(pygame.time.get_ticks() /
+                                (flash_period * 1000)) % 2
+
+                    if phase == 0:
+                        color = (0, 0, 0)
+                    else:
+                        color = (255, 40, 40)
+                    pygame.draw.circle(screen, color, (tex, tey + 1), br)
+                    pygame.draw.circle(screen, color, (tex, tey), br)
+                else:
+                    pygame.draw.circle(screen, C_BOMBD, (tex, tey + 1), br)
+                    pygame.draw.circle(screen, C_BOMB, (tex, tey), br)
+                pygame.draw.circle(screen, (100, 100, 100), (tex - hl, tey - hl), hl)
+            else:
+                pygame.draw.circle(screen, C_BALLD, (tex, tey + 1), br)
+                pygame.draw.circle(screen, C_BALL, (tex, tey), br)
+                pygame.draw.circle(screen, (255, 130, 130), (tex - hl, tey - hl), hl)
         else:
             pygame.draw.circle(screen, c, (tex, tey), max(1, lw))
 

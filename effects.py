@@ -11,7 +11,7 @@ from settings import (
     CX1, CX2, CY1, CY2,
     MID_X,
     C_GOLD, C_GOLD2, C_WHITE,
-    w2s
+    w2s, EXPLOSION_RADIUS
 )
 
 _CL_TOP = w2s(MID_X, CY1)
@@ -109,7 +109,7 @@ class ExplosionEffect:
 
         r = int(
             20 + 120 * t
-        )
+        ) / 140 * EXPLOSION_RADIUS
 
         pygame.draw.circle(
             screen,

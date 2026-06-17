@@ -10,7 +10,7 @@ from settings import (
     CX1, CX2, CY1, CY2, B_RADIUS, SPIN_K,
     GRAVITY, THROW_SPD, THROW_VZ, BOUNCE_K, ROLL_DAMP,
     C_BALL, C_BALLD, C_SHADOW,
-    w2s, persp_r, persp_z_scale,
+    w2s, persp_r, persp_z_scale,ARM_TIME,EXPLOSION_RADIUS,FLASH_PERIOD,
 )
 
 LOOSE  = "loose"
@@ -114,9 +114,7 @@ class Ball:
         return (self.x - px) ** 2 + (self.y - py) ** 2
 
 
-ARM_TIME = 2.0          # 폭발까지 시간
-EXPLOSION_RADIUS = 120
-FLASH_PERIOD = 0.15
+
 
 
 class Bomb(Ball):
@@ -168,6 +166,9 @@ class Bomb(Ball):
     def draw(self, screen):
 
         if self.exploded:
+            return
+
+        if self.state == HELD:
             return
 
         sx, sy = w2s(self.x, self.y)
