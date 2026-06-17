@@ -23,6 +23,10 @@ ROLL_DAMP   = 3.5
 MAX_SPIN = 100.0
 SPIN_K = 0.01
 
+ARM_TIME = 2.0          # 폭발까지 시간
+EXPLOSION_RADIUS = 120
+FLASH_PERIOD = 0.15
+
 GAME_SECS  = 120
 N_BALLS    = 4
 KNOCK_DUR  = 1.8
@@ -48,6 +52,8 @@ C_P2D = (178, 38,  38)
 
 C_BALL  = (218, 54,  54)
 C_BALLD = (148, 18,  18)
+C_BOMB = (0, 0, 0)
+C_BOMBD = (10, 10, 10)
 
 C_GOLD   = (255, 208, 22)
 C_GOLD2  = (255, 168,  0)
