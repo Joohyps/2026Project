@@ -9,15 +9,13 @@ from settings import (
     CX1, CX2, CY1, CY2, B_RADIUS, SPIN_K,
     GRAVITY, THROW_SPD, THROW_VZ, BOUNCE_K, ROLL_DAMP,
     C_BALL, C_BALLD, C_SHADOW,
-    w2s, persp_r, persp_z_scale,
+    w2s, persp_r, persp_z_scale, _SAFE_SPEED
 )
 
 LOOSE  = "loose"
 HELD   = "held"
 THROWN = "thrown"
 
-# 이 속도 이하로 줄어야 공을 집을 수 있음
-_SAFE_SPEED = 80.0
 
 
 class Ball:

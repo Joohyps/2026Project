@@ -13,7 +13,7 @@ from settings import (
     GAME_SECS, P1_START, P2_START,
     C_P1, C_P1D, C_P2, C_P2D,
     C_SCORE1, C_SCORE2, C_TIMER, C_GOLD, C_WHITE,
-    w2s, persp_z_scale,
+    w2s, persp_z_scale, BOMB_RESPAWN
 )
 from court   import Court
 from player  import Player, ALIVE, KNOCKED, ROLLING
@@ -24,8 +24,6 @@ from bot     import ScriptedBot
 MENU = "menu"
 PLAY = "play"
 OVER = "over"
-
-BOMB_RESPAWN = 10.0   # 폭탄 재등장 간격 (초)
 
 
 class Game:
@@ -252,9 +250,9 @@ class Game:
                     frac    = max(0, b.timer / b.explosion_radius * 10)
                     warn_c  = (255, 80, 80) if int(pygame.time.get_ticks()/150)%2 else (255,200,0)
                     txt = self.f_xs.render(
-                        f"💣 {b.timer:.1f}s", True, warn_c)
+                        f"BOMB : {b.timer:.1f}s", True, warn_c)
                 else:
-                    txt = self.f_xs.render("💣 BOMB", True, (255, 200, 0))
+                    txt = self.f_xs.render("BOMB", True, (255, 200, 0))
                 self.screen.blit(txt, (x, 90))
 
         if self.mode == 'bot':
@@ -262,9 +260,9 @@ class Game:
             self.screen.blit(lbl, lbl.get_rect(right=WIDTH-55, top=118))
 
         if self.mode == 'pvp':
-            hint = "P1: WASD LShift 던지기 Tab 구르기 Q/E 스핀   P2: IJKL / 던지기 P 구르기 U/O 스핀   ESC 메뉴"
+            hint = "P1: move:WASD  throw:LShift  dodge:Tab  spin:Q/E   P2: move:IJKL  throw:/  dodge:P  spin:U/O   Go to Menu:ESC"
         else:
-            hint = "P1: WASD LShift 던지기 Tab 구르기 Q/E 스핀     ESC 메뉴"
+            hint = "P1: move:WASD  throw:LShift  dodge:Tab  spin:Q/E     Go to Menu:ESC"
         h = self.f_xs.render(hint, True, (130, 130, 130))
         self.screen.blit(h, h.get_rect(centerx=WIDTH//2, bottom=HEIGHT-4))
 
@@ -272,18 +270,18 @@ class Game:
         self.screen.fill((10, 22, 10))
         t = self.f_huge.render("BATTLE  BALL", True, C_GOLD)
         self.screen.blit(t, t.get_rect(centerx=WIDTH//2, centery=HEIGHT//2-100))
-        sub = self.f_sm.render("1 v 1  피구 게임  +  💣 폭탄", True, C_WHITE)
+        sub = self.f_sm.render("1 v 1  Dodgeball Game!  +  Bomb", True, C_WHITE)
         self.screen.blit(sub, sub.get_rect(centerx=WIDTH//2, centery=HEIGHT//2-15))
 
         if self.mode == 'bot':
             rows = [
-                ("Player 1", "WASD 이동  LShift 던지기  Tab 구르기  Q/E 스핀", C_SCORE1),
-                ("Player 2", "BOT (자동 조종)", C_SCORE2),
+                ("Player 1", "move:WASD  throw:LShift  dodge:Tab  spin:Q/E", C_SCORE1),
+                ("Player 2", "BOT (Auto)", C_SCORE2),
             ]
         else:
             rows = [
-                ("Player 1", "WASD 이동  LShift 던지기  Tab 구르기  Q/E 스핀", C_SCORE1),
-                ("Player 2", "IJKL 이동     / 던지기    P 구르기   U/O 스핀", C_SCORE2),
+                ("Player 1", "move:WASD  throw:LShift  dodge:Tab  spin:Q/E", C_SCORE1),
+                ("Player 2", "move:IJKL  throw:/  dodge:P  spin:U/O", C_SCORE2),
             ]
         for i, (label, ctrl, col) in enumerate(rows):
             lbl = self.f_xs.render(label, True, col)
@@ -293,7 +291,7 @@ class Game:
             self.screen.blit(ctl, ctl.get_rect(left=WIDTH //2+8,  centery=cy))
 
         bomb_hint = self.f_xs.render(
-            "💣 폭탄: 착지 후 2.5초 뒤 폭발 — 범위 안에 있으면 사망  /  들고 있어도 폭발!",
+            "Bomb: Explodes 2.5s After Landing  /  Still Explodes While Holding!",
             True, (200, 150, 50))
         self.screen.blit(bomb_hint, bomb_hint.get_rect(centerx=WIDTH//2, centery=HEIGHT//2+110))
 
@@ -312,5 +310,5 @@ class Game:
         self.screen.blit(wt, wt.get_rect(centerx=WIDTH//2, centery=HEIGHT//2-55))
         sc = self.f_sm.render(f"P1  {self.p1.score}  —  {self.p2.score}  P2", True, C_WHITE)
         self.screen.blit(sc, sc.get_rect(centerx=WIDTH//2, centery=HEIGHT//2+28))
-        rs = self.f_xs.render("Space 재시작   ESC 메뉴", True, (195, 195, 195))
+        rs = self.f_xs.render("Restart : Space   Go to menu : ESC", True, (195, 195, 195))
         self.screen.blit(rs, rs.get_rect(centerx=WIDTH//2, centery=HEIGHT//2+88))

@@ -23,6 +23,10 @@ ROLL_DAMP   = 3.5
 MAX_SPIN = 100.0
 SPIN_K = 0.01
 
+_SAFE_SPEED = 100.0
+
+BOMB_RESPAWN = 3.0
+
 ARM_TIME = 2.0          # 폭발까지 시간
 EXPLOSION_RADIUS = 120
 FLASH_PERIOD = 0.15
@@ -97,8 +101,3 @@ def court_x_limits(gy: float, r_base: float) -> tuple:
     r_screen = persp_r(gy, r_base)
     margin = r_screen * (CW * 0.5) / hw
     return CX1 + margin, CX2 - margin
-# ── 폭탄 ─────────────────────────────────────────────────────────────────────
-ARM_TIME         = 2.5    # 착지 후 폭발까지 시간 (초)
-EXPLOSION_RADIUS = 120    # 폭발 범위 (px)
-C_BOMB           = (20,  20,  20)
-C_BOMBD          = (80,  40,  0)

@@ -9,7 +9,7 @@ from settings import (
     CX1, CX2, CY1, CY2, MID_X,
     C_GOLD, C_GOLD2, C_WHITE,
     EXPLOSION_RADIUS,
-    w2s,
+    w2s, persp_r
 )
 
 _CL_TOP = w2s(MID_X, CY1)
@@ -50,8 +50,10 @@ class ExplosionEffect:
         t = 1.0 - (self.life / self.max_life)
         r = int((20 + 120 * t) / 140 * EXPLOSION_RADIUS)
 
-        pygame.draw.circle(screen, (255, 180, 0),   (self.x, self.y), max(5, r), 6)
-        pygame.draw.circle(screen, (255, 255, 100), (self.x, self.y), max(3, r // 2), 3)
+        r_real = persp_r(self.y, r)
+
+        pygame.draw.circle(screen, (255, 180, 0),   (self.x, self.y), max(5, r_real), 6)
+        pygame.draw.circle(screen, (255, 255, 100), (self.x, self.y), max(3, r_real // 2), 3)
 
 
 class Effects:

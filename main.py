@@ -17,10 +17,10 @@ def run_menu(screen, clock):
 
     modes = [
         ('1  vs  1   PvP',
-         'WASD + LShift   vs   IJKL + /   두 사람이 직접 조종',
+         'WASD + LShift   vs   IJKL + /    control',
          C_SCORE1),
-        ('사람  vs  봇',
-         'WASD + LShift 로 플레이   오른쪽은 자동 봇',
+        ('1  vs  BOT   PvE',
+         'WASD + LShift vs  BOT(AUTO)',
          C_SCORE2),
     ]
     selected = 0
