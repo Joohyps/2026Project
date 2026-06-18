@@ -132,6 +132,11 @@ class Game:
         self._auto_pickup()
 
         # 폭발한 폭탄 제거
+        for b in self.balls:
+            if isinstance(b, Bomb) and b.exploded:
+                if b.owner:
+                    b.owner.held = None
+                    b.owner = None
         self.balls = [b for b in self.balls
                       if not (isinstance(b, Bomb) and b.exploded)]
 
