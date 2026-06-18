@@ -336,8 +336,8 @@ class Player:
                 ]
             else:
                 arc_pts = [
-                    (sx + int(math.cos(-math.pi  -i * math.pi * frac / 10) * spin_r),
-                     sy + int(math.sin(-math.pi - i * math.pi * frac / 10) * spin_r))
+                    (sx + int(math.cos( -i * math.pi * frac / 10) * spin_r),
+                     sy + int(math.sin( -i * math.pi * frac / 10) * spin_r))
                     for i in range(11)
                 ]
             if len(arc_pts) >= 2:
