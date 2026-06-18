@@ -129,9 +129,9 @@ class Player:
             # 스핀 입력 (ls/rs 키)
             ls_key = self.keys.get('ls', None)
             rs_key = self.keys.get('rs', None)
-            if ls_key and pressed[ls_key]:
+            if ls_key and pressed[ls_key] and self.held:
                 self._spin = max(-MAX_SPIN, self._spin - 160 * dt)
-            elif rs_key and pressed[rs_key]:
+            elif rs_key and pressed[rs_key] and self.held:
                 self._spin = min( MAX_SPIN, self._spin + 160 * dt)
             else:
                 self._spin *= max(0.0, 1.0 - 6.0 * dt)
@@ -328,11 +328,18 @@ class Player:
             spin_r = r + 8
             spin_color = (100, 200, 255) if self._spin > 0 else (255, 150, 80)
             frac = abs(self._spin) / MAX_SPIN
-            arc_pts = [
-                (sx + int(math.cos(math.pi + i * math.pi * frac / 10) * spin_r),
-                 sy + int(math.sin(math.pi + i * math.pi * frac / 10) * spin_r))
-                for i in range(11)
-            ]
+            if self._spin >= 0:
+                arc_pts = [
+                    (sx + int(math.cos(math.pi + i * math.pi * frac / 10) * spin_r),
+                     sy + int(math.sin(math.pi + i * math.pi * frac / 10) * spin_r))
+                    for i in range(11)
+                ]
+            else:
+                arc_pts = [
+                    (sx + int(math.cos(-math.pi  -i * math.pi * frac / 10) * spin_r),
+                     sy + int(math.sin(-math.pi - i * math.pi * frac / 10) * spin_r))
+                    for i in range(11)
+                ]
             if len(arc_pts) >= 2:
                 pygame.draw.lines(screen, spin_color, False, arc_pts, 5)
 
