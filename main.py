@@ -57,7 +57,7 @@ def run_menu(screen, clock):
 
         t = f_title.render("BATTLE  BALL", True, C_GOLD)
         screen.blit(t, t.get_rect(centerx=WIDTH // 2, centery=130))
-        sub = f_desc.render("1 v 1  피구 게임", True, (130, 130, 130))
+        sub = f_desc.render("1 v 1  Dodgeball", True, (130, 130, 130))
         screen.blit(sub, sub.get_rect(centerx=WIDTH // 2, centery=195))
 
         card_w, card_h = 740, 100
