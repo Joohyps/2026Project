@@ -1,6 +1,33 @@
 """
-Battle Ball — 1v1  |  settings.py
-모든 상수 + 원근 투영 함수 정의
+전역변수:
+- WIDTH, HEIGHT : 화면 크기
+- FPS           : 목표 프레임
+- CX1~CY2       : 경기장 영역
+- MID_X         : 경기장 중앙선
+- PLAYER_SPD    : 플레이어 이동 속도
+- THROW_SPD     : 공 투척 속도
+- THROW_VZ      : 공 투척 수직 속도
+- GRAVITY       : 중력 가속도
+- BOUNCE_K      : 공 반발 계수
+- ROLL_DAMP     : 공 구름 감쇠 계수
+- MAX_SPIN      : 최대 스핀량
+- SPIN_K        : 스핀 계수
+- ARM_TIME      : 폭탄 폭발 대기 시간
+- EXPLOSION_RADIUS : 폭발 반경
+- GAME_SECS     : 경기 시간
+- PICKUP_R      : 공 줍기 범위
+- P_RADIUS      : 플레이어 반지름
+- B_RADIUS      : 공 반지름
+- HIT_Z_MAX     : 피격 가능한 최대 높이
+- P1_START      : 플레이어 1 시작 위치
+- P2_START      : 플레이어 2 시작 위치
+- C_뭐시기           : 게임 색상 상수
+
+메서드:
+- w2s(gx, gy)                    : 월드 좌표를 화면 좌표로 변환
+- persp_r(gy, base)              : 원근감을 고려한 반지름 계산
+- persp_z_scale(gy)              : 높이(z) 표시 스케일 계산
+- court_x_limits(gy, r_base)     : 해당 y 위치에서 이동 가능한 x 범위 계산
 """
 
 WIDTH, HEIGHT = 1280, 720

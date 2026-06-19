@@ -15,6 +15,23 @@ from settings import (
 
 
 class Court:
+    """
+        원근 투영 기반 경기장 렌더
+
+        - 생성 시 배경을 한 번만 그려 Surface에 저장
+        - draw() 호출 시 저장된 Surface만 출력하여 렌더링 비용 최소화
+        - settings.py의 w2s() 원근 투영 함수를 사용하여 사다리꼴 경기장을 표현
+
+        속성:
+        - _surf : 미리 렌더링된 코트 배경 Surface
+
+        메서드:
+        - draw(screen)      : 코트를 화면에 렌더링
+        - _build()          : 코트 전체 배경 생성
+        - _draw_bg(s)       : 배경 장식(나무) 생성
+        - _draw_grass(s)    : 경기장 잔디 및 줄무늬 생성
+        - _draw_fence(s)    : 경기장 울타리 및 경계선 생성
+        """
     def __init__(self):
         self._surf = pygame.Surface((WIDTH, HEIGHT))
         self._build()

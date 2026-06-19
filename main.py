@@ -10,6 +10,9 @@ from game import Game
 
 
 def run_menu(screen, clock):
+    """
+    그냥 메뉴 출력. 하면 됨.
+    """
     f_title = pygame.font.Font(None, 110)
     f_mode  = pygame.font.Font(None, 48)
     f_desc  = pygame.font.Font(None, 27)

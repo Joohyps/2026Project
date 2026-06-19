@@ -25,6 +25,37 @@ ROLL_COOLDOWN = 1.5
 
 
 class Player:
+    """
+    게임 플레이에 사용되는 플레이어 클래스
+
+    상태변수:
+    - ALIVE   : 일반 상태
+    - KNOCKED : 피격 상태
+    - BLINK   : 무적 상태
+    - ROLLING : 구르기 상태
+
+    속성:
+    - pid           : 플레이어 번호
+    - x, y          : 플레이어 위치
+    - state         : 현재 상태
+    - score         : 점수
+    - held          : 현재 들고 있는 공
+    - facing        : 바라보는 방향
+    - color         : 플레이어 색상
+    - keys          : 조작 키 설정
+    - ext_control   : 외부(AI) 제어 여부
+    - ext_dx        : AI 이동 방향 x
+    - ext_dy        : AI 이동 방향 y
+
+    메서드:
+    - update(dt, pressed)           : 플레이어 상태 및 입력 갱신
+    - try_throw(spin_override=None) : 공 던지기
+    - try_roll()                    : 구르기
+    - get_hit()                     : 피격 처리
+    - draw(screen)                  : 플레이어 렌더링
+    - draw_shadow(screen)           : 그림자 렌더링
+    """
+
     def __init__(self, pid: int, x: float, y: float,
                  keys: dict, color: tuple, color_dark: tuple):
         self.pid    = pid
@@ -323,7 +354,7 @@ class Player:
         else:
             pygame.draw.circle(screen, c, (tex, tey), max(1, lw))
 
-        # 스핀 게이지 (사람이 조종할 때만 표시)
+        #스핀 게이지 draw
         if not self.ext_control and abs(self._spin) > 5:
             spin_r = r + 8
             spin_color = (100, 200, 255) if self._spin > 0 else (255, 150, 80)
@@ -386,6 +417,15 @@ class Player:
 
 
 def _ellipse_pts(cx, cy, a, b, angle, n=14):
+    """
+    타원 형태의 다각형 정점 목록을 생성하는 함수.
+
+    - cx, cy : 중심 좌표
+    - a      : 장축 반지름
+    - b      : 단축 반지름
+    - angle  : 회전 각도
+    - n      : 분할 수
+    """
     cos_a, sin_a = math.cos(angle), math.sin(angle)
     return [(int(cx + a*math.cos(j*math.tau/n)*cos_a - b*math.sin(j*math.tau/n)*sin_a),
              int(cy + a*math.cos(j*math.tau/n)*sin_a + b*math.sin(j*math.tau/n)*cos_a))

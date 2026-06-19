@@ -27,6 +27,45 @@ OVER = "over"
 
 
 class Game:
+    """
+    게임 전체를 관리 클래스.
+
+    상태변수:
+    - MENU : 시작 메뉴 상태
+    - PLAY : 게임 진행 상태
+    - OVER : 게임 종료 상태
+
+    속성:
+    - screen      : 게임 화면
+    - mode        : 게임 모드 ('pvp' 또는 'bot')
+    - state       : 현재 게임 상태
+    - court       : 경기장 객체
+    - p1          : 플레이어 1
+    - p2          : 플레이어 2
+    - balls       : 경기장 내 공 및 폭탄 목록
+    - bot         : AI 봇 객체
+    - fx          : 이펙트 관리자
+    - timer       : 남은 경기 시간
+    - winner      : 승리 플레이어
+    - _bomb_timer : 다음 폭탄 생성까지 남은 시간
+
+    메서드:
+    - handle_event(ev) : 입력 이벤트 처리
+    - update(dt)       : 게임 상태 갱신
+    - draw()           : 게임 화면 렌더링
+    - _reset()         : 게임 초기화
+    - _action(p)       : 플레이어 상호작용 처리
+    - _pickup(p)       : 공 줍기 처리
+    - _auto_pickup()   : 자동 공 줍기 처리
+    - _check_hits()    : 공 및 폭탄 피해 판정
+    - _end()           : 게임 종료 처리
+    - _spawn_bomb()    : 폭탄 생성
+    - _draw_game()     : 게임 화면 렌더링
+    - _draw_menu()     : 메뉴 화면 렌더링
+    - _draw_over()     : 결과 화면 렌더링
+    - _hud()           : HUD 렌더링
+    """
+
     def __init__(self, screen, mode: str = 'pvp'):
         self.screen = screen
         self.mode   = mode
@@ -131,7 +170,7 @@ class Game:
         self._check_hits()
         self._auto_pickup()
 
-        # 폭발한 폭탄 제거
+        # exploded된 폭탄들 따로 관리하기
         for b in self.balls:
             if isinstance(b, Bomb) and b.exploded:
                 if b.owner:

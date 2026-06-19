@@ -17,6 +17,23 @@ _CL_BOT = w2s(MID_X, CY2)
 
 
 class _Particle:
+    """
+    파티클 하나를 나타내는 클래스
+
+    속성:
+    - x, y       : 파티클 위치
+    - vx, vy     : 파티클 속도
+    - color      : 파티클 색상
+    - life       : 남은 수명
+    - max_life   : 초기 수명
+    - r          : 반지름
+    - grav       : 중력 가속도
+
+    메서드:
+    - update(dt) : 파티클 상태 갱신
+    - draw(surf) : 파티클 렌더링
+    """
+
     __slots__ = ('x','y','vx','vy','color','life','max_life','r','grav')
     def __init__(self, x, y, vx, vy, color, life, r=3, grav=180.0):
         self.x=float(x); self.y=float(y); self.vx=vx; self.vy=vy
@@ -32,7 +49,19 @@ class _Particle:
 
 
 class ExplosionEffect:
-    """폭발 원형 이펙트."""
+    """
+    폭발 원형 이펙트 렌더링하는 클래스
+
+    속성:
+    - x, y       : 폭발 중심 위치
+    - life       : 남은 수명
+    - max_life   : 초기 수명
+
+    메서드:
+    - update(dt) : 폭발 상태 갱신
+    - draw(screen) : 폭발 이펙트 렌더링
+    - dead()       : 이펙트 종료 여부 반환
+    """
 
     def __init__(self, x: int, y: int):
         self.x = x;  self.y = y
@@ -57,6 +86,23 @@ class ExplosionEffect:
 
 
 class Effects:
+    """
+    게임의 모든 시각 효과를 관리 클래스
+
+    속성:
+    - _particles    : 일반 파티클 목록
+    - _explosions   : 폭발 이펙트 목록
+    - _cl_particles : 중앙선 파티클 목록
+    - _cl_timer     : 중앙선 파티클 생성 타이머
+
+    메서드:
+    - spawn_hit(x, y)       : 명중 파티클 생성
+    - spawn_explosion(x, y) : 폭발 이펙트 생성
+    - update(dt)            : 모든 이펙트 상태 갱신
+    - draw_center(screen)   : 중앙선 및 중앙선 파티클 렌더링
+    - draw(screen)          : 일반 파티클 및 폭발 이펙트 렌더링
+    """
+
     def __init__(self):
         self._particles    = []
         self._explosions   = []

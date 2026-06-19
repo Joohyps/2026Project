@@ -1,6 +1,5 @@
 """
 Battle Ball — 1v1  |  bot.py
-스크립트 봇 — 적당히 허점 있음
 """
 
 import math
@@ -10,6 +9,19 @@ from ball   import LOOSE
 
 
 class ScriptedBot:
+    """
+    행동 로직 기반 봇
+
+    속성:
+    - _throw_timer : 다음 투척까지 남은 시간
+    - _wander_t    : 랜덤 이동 지속 시간
+    - _wander_dx   : 랜덤 이동 방향 x
+    - _wander_dy   : 랜덤 이동 방향 y
+
+    메서드:
+    - update(dt, me, opponent, balls) : AI 행동 결정 및 플레이어 제어
+    """
+
     def __init__(self):
         self._throw_timer = 0.0
         self._wander_t    = 0.0   # 가끔 엉뚱한 방향으로 이동

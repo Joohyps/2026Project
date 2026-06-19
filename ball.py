@@ -19,6 +19,30 @@ THROWN = "thrown"
 
 
 class Ball:
+    """
+        공입니다.
+
+        상태변수:
+        - LOOSE  : 바닥에 놓여 있거나 굴러가는 상태
+        - HELD   : 플레이어가 들고 있는 상태
+        - THROWN : 공중에 투척된 상태
+
+        속성:
+        - x, y, z       : 공 위치
+        - vx, vy, vz    : 속도
+        - w             : 스핀량
+        - state         : 현재 상태
+        - owner         : 공을 들고 있는 플레이어
+        - thrown_by     : 마지막으로 공을 던진 플레이어
+
+        메서드
+        - throw(dx, dy, spin) : 지정 방향으로 공 투척
+        - update(dt)          : 물리 상태 갱신
+        - draw(screen)        : 공 렌더링
+        - draw_shadow(screen) : 그림자 렌더링
+        - dist_sq(px, py)     : 특정 위치까지의 거리 제곱 반환
+        - is_dangerous()      : 현재 공이 플레이어에게 피해를 줄 수 있는지 반환.
+        """
     def __init__(self, x: float, y: float, bid: int):
         self.bid = bid
         self.x   = float(x);  self.y  = float(y);  self.z  = 0.0
@@ -45,7 +69,7 @@ class Ball:
         self.x  += self.vx  * dt
         self.y  += self.vy  * dt
 
-        # 스핀
+        # 스핀 구현 (근데 스핀이 마찰로 인해 점점 감쇠되는 영향도 추가함)
         if abs(self.w) >= 10:
             v_norm = (self.vy**2 + self.vx**2) ** 0.5
             if v_norm <= 0.1: v_norm = 10
@@ -79,7 +103,7 @@ class Ball:
                     else:
                         self.vx = self.vy = 0.0
 
-            # ★ 속도가 충분히 줄어야 thrown_by 해제 (줍기 가능 상태)
+
             if self.state == LOOSE and self.thrown_by is not None:
                 spd = math.hypot(self.vx, self.vy)
                 if spd < _SAFE_SPEED:
@@ -129,10 +153,27 @@ from settings import ARM_TIME, EXPLOSION_RADIUS, C_BOMB, C_BOMBD
 
 class Bomb(Ball):
     """
-    착지 후 ARM_TIME 초 뒤 폭발.
-    직접 명중 데미지 없음 — 폭발 범위 안에 있으면 피해.
-    들고 있을 때도 타이머 계속 진행 → 빨리 던져야 함.
+    폭탄 : 땅에 닿은 후 일정 시간 지나면 폭발하며 범위 내 모든 플레이어에게 피해.
+
+    상태변수:
+    - armed    : 점화 여부
+    - exploded : 폭발 여부
+
+    속성:
+    - x, y, z           : 폭탄 위치
+    - vx, vy, vz        : 속도
+    - state             : 현재 상태
+    - owner             : 폭탄을 들고 있는 플레이어
+    - timer             : 폭발까지 남은 시간
+    - explosion_radius  : 폭발 반경
+
+    메서드:
+    - update(dt)          : 폭탄 상태 및 타이머 갱신
+    - draw(screen)        : 폭탄 렌더링
+    - draw_shadow(screen) : 그림자 렌더링
+    - is_dangerous()      : 현재 폭탄이 플레이어에게 직접 피해를 줄 수 있는지 반환
     """
+
 
     def __init__(self, x: float, y: float, bid: int):
         super().__init__(x, y, bid)
